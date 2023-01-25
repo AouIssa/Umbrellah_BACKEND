@@ -1,13 +1,20 @@
 const express = require("express");
 const app = express();
 
-require('dotenv').config();
+require("dotenv").config();
 const mongoose = require("mongoose");
 
 app.use(express.json());
 
 const port = 5005;
+const multer = require("multer");
 
+const ImageSchema = new mongoose.Schema({
+  image: { type: Buffer, required: true },
+});
+const Image = mongoose.model("Image", ImageSchema);
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 mongoose
   .connect(process.env.MONGO_URL, {
@@ -21,6 +28,17 @@ mongoose
 
 app.listen(port, () => {
   console.log("Server started");
+});
+
+app.post("/upload", upload.single("image"), async (req, res) => {
+  try {
+    const newImage = new Image({ image: req.file.buffer });
+    await newImage.save();
+    res.send({ status: "ok" });
+  } catch (error) {
+    console.log(error);
+    res.send({ status: "error" });
+  }
 });
 
 app.post("/post", async (req, res) => {
